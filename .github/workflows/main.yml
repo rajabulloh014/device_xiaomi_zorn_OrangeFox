@@ -1,10 +1,5 @@
 name: 🦊 OrangeFox for zorn - 手动构建
 
-# Credits to:
-# https://github.com/TeamWin
-# https://gitlab.com/OrangeFox
-# And all Contributors in every repositories I used
-
 on:
   workflow_dispatch:
     inputs:
@@ -32,6 +27,10 @@ on:
         description: '输入你的设备代号'
         required: true
         default: 'zorn'
+      PRODUCT_NAME:
+        description: 'Nama produk untuk lunch (contoh: twrp_zorn, fox_zorn)'
+        required: true
+        default: 'twrp_zorn'
       BUILD_TARGET:
         description: '选择你的构建目标'
         required: true
@@ -61,7 +60,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-
       - name: 🧹 清理构建空间
         uses: rokibhasansagar/slimhub_actions@main
 
@@ -72,7 +70,6 @@ jobs:
           cd scripts
           sudo bash setup/android_build_env.sh
           cd .. && rm -rf scripts
-
           sudo apt autoclean >/dev/null || true
           sudo apt autoremove -qy 2>/dev/null || true
           sudo rm -rf /var/cache/apt/archives/ 2>/dev/null || true
@@ -137,8 +134,8 @@ jobs:
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           set -e
-          # Perbaikan: Gunakan fox_* bukan twrp_*
-          lunch fox_${{ inputs.DEVICE_NAME }}-eng
+          # Gunakan PRODUCT_NAME dari input (contoh: twrp_zorn-eng)
+          lunch ${{ inputs.PRODUCT_NAME }}-eng
           make clean
           mka adbd ${{ inputs.BUILD_TARGET }}image
 
@@ -150,7 +147,6 @@ jobs:
         run: |
           echo "BUILD_DATE=$(TZ=Asia/Shanghai date +%Y%m%d)" >> $GITHUB_ENV
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-
           DEVICE_TREE_URL="${{ inputs.DEVICE_TREE }}"
           if [[ "${DEVICE_TREE_URL}" == *.git ]]; then
             DEVICE_TREE_URL="${DEVICE_TREE_URL%.git}"
@@ -159,9 +155,7 @@ jobs:
 
       - name: 📦 规范化输出文件名
         run: |
-          # Perbaikan: Hapus duplikasi target/product
           OUT_DIR=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
-
           for f in "$OUT_DIR"/OrangeFox*.img "$OUT_DIR"/OrangeFox*.zip; do
             [ -e "$f" ] || continue
             base=$(basename "$f")
