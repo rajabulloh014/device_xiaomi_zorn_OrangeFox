@@ -1,4 +1,4 @@
-name: 🦊 OrangeFox for marble - 手动构建
+name: 🦊 OrangeFox for zorn - 手动构建
 
 # Credits to:
 # https://github.com/TeamWin
@@ -11,7 +11,7 @@ on:
       MANIFEST_BRANCH:
         description: 'OrangeFox 清单分支'
         required: true
-        default: '12.1'
+        default: '14.1'
         type: choice
         options:
           - 14.1
@@ -19,19 +19,19 @@ on:
       DEVICE_TREE:
         description: 'OrangeFox 设备树'
         required: true
-        default: 'https://github.com/AviderMin/ofrp_device_xiaomi_marble'
+        default: 'https://github.com/rajabulloh014/device_xiaomi_zorn_OrangeFox'
       DEVICE_TREE_BRANCH:
         description: 'OrangeFox 设备树分支'
         required: true
-        default: 'fox_12.1'
+        default: 'fox_14.1'
       DEVICE_PATH:
         description: '输入你的设备路径'
         required: true
-        default: 'device/xiaomi/marble'
+        default: 'device/xiaomi/zorn'
       DEVICE_NAME:
         description: '输入你的设备代号'
         required: true
-        default: 'marble'
+        default: 'zorn'
       BUILD_TARGET:
         description: '选择你的构建目标'
         required: true
@@ -49,7 +49,7 @@ on:
       OF_MAINTAINER:
         description: '输入维护者名称'
         required: true
-        default: 'AviderMin'
+        default: 'rajabulloh014'
 
 jobs:
   build:
@@ -111,8 +111,6 @@ jobs:
           cd sync
           ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
 
-      
-
       - name: 📥 克隆设备树源码
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
@@ -132,18 +130,17 @@ jobs:
           set +e
           export FOX_BUILD_DEVICE=${{ inputs.DEVICE_NAME }}
           if [[ ${{ inputs.USE_CCACHE }} == true ]]; then
-          export USE_CCACHE=1
-          export CCACHE_EXEC=/usr/bin/ccache
-          sed -i 's/return sandboxConfig\.working/return false/g' build/soong/ui/build/sandbox_linux.go
+            export USE_CCACHE=1
+            export CCACHE_EXEC=/usr/bin/ccache
+            sed -i 's/return sandboxConfig\.working/return false/g' build/soong/ui/build/sandbox_linux.go
           fi
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           set -e
-          if [[ ${{ inputs.MANIFEST_BRANCH }} == '14.1' ]]; then
-          lunch twrp_${{ inputs.DEVICE_NAME }}-ap2a-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
-          else
-          lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
-          fi
+          # Perbaikan: Gunakan fox_* bukan twrp_*
+          lunch fox_${{ inputs.DEVICE_NAME }}-eng
+          make clean
+          mka adbd ${{ inputs.BUILD_TARGET }}image
 
       - name: 📊 查看 ccache 命中统计
         run: |
@@ -162,7 +159,8 @@ jobs:
 
       - name: 📦 规范化输出文件名
         run: |
-          OUT_DIR=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}/target/product/${{ inputs.DEVICE_NAME }}
+          # Perbaikan: Hapus duplikasi target/product
+          OUT_DIR=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
 
           for f in "$OUT_DIR"/OrangeFox*.img "$OUT_DIR"/OrangeFox*.zip; do
             [ -e "$f" ] || continue
@@ -178,8 +176,8 @@ jobs:
           tag_name: ${{ github.run_id }}
           name: OrangeFox Recovery for ${{ inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
           files: |
-            OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}/target/product/${{ inputs.DEVICE_NAME }}/OrangeFox*.img
-            OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}/target/product/${{ inputs.DEVICE_NAME }}/OrangeFox*.zip
+            OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}/OrangeFox*.img
+            OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}/OrangeFox*.zip
           body: |
             ## OrangeFox Recovery Build - Unofficial
 
